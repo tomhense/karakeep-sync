@@ -48,12 +48,13 @@ impl super::Plugin for HNFavorited {
 
     fn recurring_schedule(&self) -> String {
         let settings = &settings::get_settings();
-        settings
-            .hn
-            .favorited_schedule
-            .as_ref()
-            .filter(|schedule| !schedule.is_empty())
-            .cloned()
-            .unwrap_or_else(|| settings.hn.schedule.clone())
+        settings.hn.schedule.clone()
+    }
+
+    fn is_activated(&self) -> bool {
+        let settings = &settings::get_settings();
+        settings.hn.auth.is_some()
+            && !settings.hn.auth.as_ref().unwrap().is_empty()
+            && !settings.hn.disable_favorites.unwrap_or(false)
     }
 }

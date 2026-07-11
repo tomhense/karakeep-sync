@@ -43,7 +43,9 @@ impl super::Plugin for HNUpvoted {
 
     fn is_activated(&self) -> bool {
         let settings = &settings::get_settings();
-        settings.hn.auth.is_some() && !settings.hn.auth.as_ref().unwrap().is_empty()
+        settings.hn.auth.is_some()
+            && !settings.hn.auth.as_ref().unwrap().is_empty()
+            && !settings.hn.disable_upvoted.unwrap_or(false)
     }
 
     fn recurring_schedule(&self) -> String {

@@ -14,7 +14,8 @@ pub(crate) struct GitHubSettings {
 pub(crate) struct HNSettings {
     pub auth: Option<String>,
     pub schedule: String,
-    pub favorited_schedule: Option<String>,
+    pub disable_upvoted: Option<bool>,
+    pub disable_favorites: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

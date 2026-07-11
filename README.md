@@ -29,8 +29,9 @@ Configure these environment variables in your `docker-compose.yml`:
 | Variable                   | Required | Description                                                        |
 | -------------------------- | -------- | ------------------------------------------------------------------ |
 | `KS_HN_AUTH`               | ❌       | Your Hacker News authentication cookie value                        |
-| `KS_HN_SCHEDULE`           | ❌       | Sync schedule for upvoted submissions (default: `@daily`)          |
-| `KS_HN_FAVORITED_SCHEDULE` | ❌       | Sync schedule for favorited submissions, falls back to `KS_HN_SCHEDULE` |
+| `KS_HN_SCHEDULE`           | ❌       | Sync schedule for HN submissions (default: `@daily`)               |
+| `KS_HN_DISABLE_UPVOTED`    | ❌       | Set to `true` to skip syncing HN upvoted submissions                |
+| `KS_HN_DISABLE_FAVORITES`  | ❌       | Set to `true` to skip syncing HN favorited submissions              |
 
 Hacker news auth cookie can be obtained by logging into your HN account and inspecting the cookies in your browser. Look for the `user` cookie.
 
@@ -111,7 +112,8 @@ services:
 
       - KS_HN_AUTH=<your_hn_auth_cookie> # optional
       - KS_HN_SCHEDULE=@daily # optional Cron format, e.g., "@hourly", "@daily", "0 0 * * *" default is "@daily"
-      - KS_HN_FAVORITED_SCHEDULE=@daily # optional Cron format for favorited submissions; defaults to KS_HN_SCHEDULE
+      - KS_HN_DISABLE_UPVOTED=false # optional, set to true to skip HN upvoted submissions
+      - KS_HN_DISABLE_FAVORITES=false # optional, set to true to skip HN favorited submissions
 
       - KS_REDDIT_CLIENTID=<your_reddit_client_id> # optional
       - KS_REDDIT_CLIENTSECRET=<your_reddit_client_secret> # optional
