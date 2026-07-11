@@ -41,11 +41,6 @@ impl super::Plugin for HNFavorited {
         Ok(Box::pin(stream))
     }
 
-    fn is_activated(&self) -> bool {
-        let settings = &settings::get_settings();
-        settings.hn.auth.is_some() && !settings.hn.auth.as_ref().unwrap().is_empty()
-    }
-
     fn recurring_schedule(&self) -> String {
         let settings = &settings::get_settings();
         settings.hn.schedule.clone()
