@@ -65,21 +65,21 @@ pub struct HNPost {
 pub fn stream_pages(
     hn_auth: &str,
     start_path: String,
-) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>>> {
+) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>> + use<>> {
     stream_pages_with_base_url(hn_auth, start_path, HN_BASE_URL)
 }
 
 pub fn stream_upvoted_submissions(
     hn_auth: &str,
     username: &str,
-) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>>> {
+) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>> + use<>> {
     stream_pages(hn_auth, format!("upvoted?id={username}"))
 }
 
 pub fn stream_favorited_submissions(
     hn_auth: &str,
     username: &str,
-) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>>> {
+) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>> + use<>> {
     stream_pages(hn_auth, format!("favorites?id={username}"))
 }
 
@@ -87,7 +87,7 @@ fn stream_pages_with_base_url(
     hn_auth: &str,
     start_path: String,
     base_url: &str,
-) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>>> {
+) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>> + use<>> {
     let client = get_hn_client(hn_auth)?;
     let base_url = base_url.to_string();
 
