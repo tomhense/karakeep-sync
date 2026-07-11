@@ -20,7 +20,11 @@ fn get_hn_client(hn_auth: &str) -> anyhow::Result<Arc<Client>> {
     Ok(Arc::new(client))
 }
 
-fn get_upvoted_submissions_from_document(document: &scraper::Html) -> Vec<HNPost> {
+pub fn username_from_auth(hn_auth: &str) -> Option<String> {
+    hn_auth.split('&').next().map(|s| s.to_string())
+}
+
+fn get_submissions_from_document(document: &scraper::Html) -> Vec<HNPost> {
     let title_selector = scraper::Selector::parse("tr.athing td.title span.titleline > a")
         .expect("Failed to parse selector");
 
@@ -65,6 +69,20 @@ pub fn stream_pages(
     stream_pages_with_base_url(hn_auth, start_path, HN_BASE_URL)
 }
 
+pub fn stream_upvoted_submissions(
+    hn_auth: &str,
+    username: &str,
+) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>>> {
+    stream_pages(hn_auth, format!("upvoted?id={username}"))
+}
+
+pub fn stream_favorited_submissions(
+    hn_auth: &str,
+    username: &str,
+) -> anyhow::Result<impl futures::Stream<Item = Vec<HNPost>>> {
+    stream_pages(hn_auth, format!("favorites?id={username}"))
+}
+
 fn stream_pages_with_base_url(
     hn_auth: &str,
     start_path: String,
@@ -91,7 +109,7 @@ fn stream_pages_with_base_url(
                     match resp.text().await {
                         Ok(body) => {
                             let document = scraper::Html::parse_document(&body);
-                            let submissions = get_upvoted_submissions_from_document(&document);
+                            let submissions = get_submissions_from_document(&document);
                             let more_link = get_more_link(&document);
                             Some((submissions, more_link))
                         }
@@ -153,9 +171,9 @@ mod tests {
     "#;
 
     #[test]
-    fn test_get_upvoted_submissions_from_document() {
+    fn test_get_submissions_from_document() {
         let document = Html::parse_document(SAMPLE_HN_HTML);
-        let submissions = get_upvoted_submissions_from_document(&document);
+        let submissions = get_submissions_from_document(&document);
 
         assert_eq!(submissions.len(), 2);
         assert_eq!(submissions[0].title, "First Story Title");
@@ -165,10 +183,23 @@ mod tests {
     }
 
     #[test]
-    fn test_get_upvoted_submissions_empty_document() {
+    fn test_get_submissions_empty_document() {
         let document = Html::parse_document("<html><body></body></html>");
-        let submissions = get_upvoted_submissions_from_document(&document);
+        let submissions = get_submissions_from_document(&document);
         assert_eq!(submissions.len(), 0);
+    }
+
+    #[test]
+    fn test_username_from_auth() {
+        assert_eq!(
+            username_from_auth("test_user&cookie=abc"),
+            Some("test_user".to_string())
+        );
+        assert_eq!(
+            username_from_auth("single_user"),
+            Some("single_user".to_string())
+        );
+        assert_eq!(username_from_auth(""), Some("".to_string()));
     }
 
     #[test]
@@ -379,5 +410,51 @@ mod tests {
         // Should get one page but with empty submissions
         assert_eq!(pages.len(), 1);
         assert_eq!(pages[0].len(), 0);
+    }
+
+    #[tokio::test]
+    async fn test_stream_favorited_submissions_uses_favorites_path() {
+        use futures::StreamExt;
+        use wiremock::matchers::{method, path};
+        use wiremock::{Mock, MockServer, ResponseTemplate};
+
+        let mock_server = MockServer::start().await;
+
+        let favorites_html = r#"
+            <html>
+            <body>
+            <table>
+                <tr class="athing">
+                    <td class="title">
+                        <span class="titleline">
+                            <a href="https://example.com/favorite-story">Favorite Story</a>
+                        </span>
+                    </td>
+                </tr>
+            </table>
+            </body>
+            </html>
+        "#;
+
+        Mock::given(method("GET"))
+            .and(path("/favorites"))
+            .respond_with(ResponseTemplate::new(200).set_body_string(favorites_html))
+            .mount(&mock_server)
+            .await;
+
+        let base_uri = mock_server.uri();
+        let stream = stream_pages_with_base_url(
+            "test_auth",
+            "favorites?id=test_user".to_string(),
+            &base_uri,
+        )
+        .unwrap();
+
+        let pages: Vec<_> = stream.collect().await;
+
+        assert_eq!(pages.len(), 1);
+        assert_eq!(pages[0].len(), 1);
+        assert_eq!(pages[0][0].title, "Favorite Story");
+        assert_eq!(pages[0][0].url, "https://example.com/favorite-story");
     }
 }

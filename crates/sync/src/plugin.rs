@@ -1,4 +1,5 @@
 mod github_stars;
+mod hn_favorites;
 mod hn_upvotes;
 mod pinboard;
 mod reddit_saves;
@@ -70,6 +71,7 @@ pub trait Plugin: Send + Sync + 'static {
 pub fn get_plugins() -> Vec<Box<dyn Plugin>> {
     vec![
         Box::new(hn_upvotes::HNUpvoted {}),
+        Box::new(hn_favorites::HNFavorited {}),
         Box::new(reddit_saves::RedditSaves {}),
         Box::new(github_stars::GithubStars {}),
         Box::new(pinboard::PinboardBookmarks {}),

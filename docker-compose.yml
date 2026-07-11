@@ -9,3 +9,4 @@ services:
       - KS_KARAKEEP_URL=<your_karakeep_instance_url> # required
       - KS_HN_AUTH=<your_hn_auth_cookie> # required
       - KS_HN_SCHEDULE=@daily # Cron format, e.g., "@hourly", "@daily", "0 0 * * *" default is "@daily"
+      - KS_HN_FAVORITED_SCHEDULE=@daily # optional Cron format for favorited submissions; defaults to KS_HN_SCHEDULE
