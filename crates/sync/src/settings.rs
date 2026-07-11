@@ -1,5 +1,6 @@
 use config::Config;
 use serde::Deserialize;
+use std::env;
 use std::sync::OnceLock;
 
 use crate::settings;
@@ -65,13 +66,50 @@ impl Settings {
             .build()
             .unwrap();
 
-        config
+        let mut settings = config
             .try_deserialize::<settings::Settings>()
-            .expect("Failed to deserialize settings")
+            .expect("Failed to deserialize settings");
+
+        settings.hn.disable_upvoted = read_optional_bool_env("KS_HN_DISABLE_UPVOTED")
+            .expect("Failed to parse KS_HN_DISABLE_UPVOTED");
+        settings.hn.disable_favorites = read_optional_bool_env("KS_HN_DISABLE_FAVORITES")
+            .expect("Failed to parse KS_HN_DISABLE_FAVORITES");
+
+        settings
     }
 }
 
 static SETTINGS: OnceLock<Settings> = OnceLock::new();
 pub fn get_settings() -> &'static Settings {
     SETTINGS.get_or_init(Settings::new)
+}
+
+fn read_optional_bool_env(name: &str) -> anyhow::Result<Option<bool>> {
+    match env::var(name) {
+        Ok(value) => parse_bool_value(&value)
+            .map_err(|e| anyhow::anyhow!("invalid boolean value for {name}: {e}")),
+        Err(env::VarError::NotPresent) => Ok(None),
+        Err(err) => Err(anyhow::anyhow!("failed to read {name}: {err}")),
+    }
+}
+
+fn parse_bool_value(value: &str) -> anyhow::Result<Option<bool>> {
+    value
+        .parse::<bool>()
+        .map(Some)
+        .map_err(|e| anyhow::anyhow!(e))
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn parses_bool_values() {
+        assert_eq!(Some(true), parse_bool_value("true").unwrap());
+        assert_eq!(Some(false), parse_bool_value("false").unwrap());
+    }
+
+    #[test]
+    fn rejects_invalid_bool_values() {
+        assert!(parse_bool_value("maybe").is_err());
+    }
 }
