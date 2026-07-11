@@ -102,6 +102,8 @@ fn parse_bool_value(value: &str) -> anyhow::Result<Option<bool>> {
 
 #[cfg(test)]
 mod tests {
+    use super::parse_bool_value;
+
     #[test]
     fn parses_bool_values() {
         assert_eq!(Some(true), parse_bool_value("true").unwrap());
